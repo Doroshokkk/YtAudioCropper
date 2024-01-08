@@ -33,7 +33,7 @@ async function downloadAndCropAudio(
   videoUrl: string,
   startSecond?: number,
   endSecond?: number
-): Promise<string> {
+): Promise<{ filePath: string; duration: number }> {
   try {
     console.log("called");
     const info = await youtubeModel.getVideoInfo(videoUrl);
@@ -44,13 +44,14 @@ async function downloadAndCropAudio(
     const videoStream = ytdl(videoUrl, { quality: "highestaudio" });
 
     const start = startSecond ? startSecond : 0;
-    const end = endSecond
+
+    const duration = endSecond
       ? endSecond - startSecond
       : Number(videoLength) - start;
 
-    await executeFfmpeg(videoStream, outputFilePath, start, end);
+    await executeFfmpeg(videoStream, outputFilePath, start, duration);
 
-    return outputFilePath;
+    return { filePath: outputFilePath, duration };
   } catch (error) {
     console.error("Error:", error.message);
     throw error;
