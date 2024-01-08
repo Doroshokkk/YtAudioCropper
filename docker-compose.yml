@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    container_name: api_backend
+    ports:
+      - '3003:3003'
+    volumes:
+      - .:/app
