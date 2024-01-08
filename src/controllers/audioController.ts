@@ -2,6 +2,8 @@ import * as ytdl from "ytdl-core";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as youtubeModel from "../models/youtubeModel";
 
+export type AudioCropResponse = { filePath: string; duration: number };
+
 function executeFfmpeg(
   videoStream: any,
   outputFilePath: string,
@@ -33,7 +35,7 @@ async function downloadAndCropAudio(
   videoUrl: string,
   startSecond?: number,
   endSecond?: number
-): Promise<{ filePath: string; duration: number }> {
+): Promise<AudioCropResponse> {
   try {
     console.log("called");
     const info = await youtubeModel.getVideoInfo(videoUrl);
