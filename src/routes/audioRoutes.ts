@@ -13,18 +13,21 @@ router.get("/crop-audio", async (req, res) => {
   };
 
   if (!videoUrl) {
-    return res.status(400).json({ error: "Missaing required parameters" });
+    return res.status(400).json({ error: "Missing required parameters" });
   }
 
   try {
-    const filePath = await audioController.downloadAndCropAudio(
+    const { filePath, duration } = await audioController.downloadAndCropAudio(
       videoUrl,
       parseInt(startSecond) || null,
       parseInt(endSecond) || null
     );
     const info = await youtubeModel.getVideoInfo(videoUrl);
-    const songName = info.videoDetails.title; // Assuming 'title' contains the song name
+    const songName = info.videoDetails.title;
+    const channelName = info.videoDetails.author;
     res.setHeader("x-song-name", songName);
+    res.setHeader("x-channel-name", channelName);
+    res.setHeader("x-audio-duration", duration);
 
     res.download(filePath, (err) => {
       if (err) {
