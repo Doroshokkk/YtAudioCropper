@@ -24,7 +24,7 @@ router.get("/crop-audio", async (req, res) => {
     );
     const info = await youtubeModel.getVideoInfo(videoUrl);
     const songName = info.videoDetails.title;
-    const channelName = info.videoDetails.author;
+    const channelName = info.videoDetails.author.name;
     res.setHeader("x-song-name", songName);
     res.setHeader("x-channel-name", channelName);
     res.setHeader("x-audio-duration", duration);
