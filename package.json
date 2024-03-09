@@ -9,7 +9,8 @@
     "dev": "nodemon -L",
     "dock_old": "docker run -p 3003:3003 -v /e/Side/YtAudioCropper:/app yt-cropper-api",
     "docker_build": "docker build -t yt-cropper-api .",
-    "compose": "docker-compose up"
+    "compose": "docker-compose up",
+    "compose_prod": "docker-compose up -d"
   },
   "type": "commonjs",
   "author": " ",
