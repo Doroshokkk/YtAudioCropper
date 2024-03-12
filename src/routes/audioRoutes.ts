@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as audioController from "../controllers/audioController";
-import * as fs from "fs";
-import * as youtubeModel from "../models/youtubeModel";
+import * as youtubeUtils from "../utils/youtubeUtils";
+import { deleteFile, sanitizeFileName } from "../utils/fileUtils";
 
 const router = express.Router();
 
@@ -16,31 +16,32 @@ router.get("/crop-audio", async (req, res) => {
         return res.status(400).json({ error: "Missing required parameters" });
     }
 
+    let filePathToDelete: string;
+
     try {
         const { filePath, duration } = await audioController.downloadAndCropAudio(
             videoUrl,
             parseInt(startSecond) || null,
             parseInt(endSecond) || null,
         );
-        const info = await youtubeModel.getVideoInfo(videoUrl);
-        const songName = info.videoDetails.title;
-        const channelName = info.videoDetails.author.name;
+        filePathToDelete = filePath;
+        const info = await youtubeUtils.getVideoInfo(videoUrl);
+        const songName = sanitizeFileName(info.videoDetails.title);
+        const channelName = sanitizeFileName(info.videoDetails.author.name);
         console.log("channelName", channelName);
         res.setHeader("x-song-name", songName);
         res.setHeader("x-channel-name", channelName);
         res.setHeader("x-audio-duration", duration);
-
-        res.download(filePath, (err) => {
+        res.download(filePath, async (err) => {
             if (err) {
                 console.error("Error sending file:", err);
-            } else {
-                // Remove the file after sending it
-                fs.unlinkSync(filePath);
             }
+            await deleteFile(filePath);
         });
     } catch (error) {
         console.error("Error:", error.message);
         res.status(500).json({ error: "Internal server error" });
+        await deleteFile(filePathToDelete);
     }
 });
 
