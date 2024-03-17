@@ -8,11 +8,21 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
     try {
         const info = await youtubeUtils.getVideoInfo(videoUrl);
         const videoTitle = info.videoDetails.title;
-        const videoLength = info.videoDetails.lengthSeconds;
+        const videoLength = Number(info.videoDetails.lengthSeconds);
         const outputFilePath = `${__dirname}/../${videoTitle}_cropped.mp3`;
         const videoStream = ytdl(videoUrl, { quality: "highestaudio" });
         const start = startSecond ? startSecond : 0;
-        const duration = endSecond ? endSecond - startSecond : Number(videoLength) - start;
+
+        let duration;
+        if (endSecond) {
+            if (endSecond <= videoLength) {
+                duration = endSecond - startSecond;
+            } else {
+                duration = videoLength - startSecond;
+            }
+        } else {
+            duration = videoLength - startSecond;
+        }
 
         await executeFfmpeg(videoStream, outputFilePath, start, duration);
         return { filePath: outputFilePath, duration };
