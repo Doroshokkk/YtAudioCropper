@@ -1,5 +1,5 @@
 import * as express from "express";
-import * as audioRoutes from "./routes/audioRoutes";
+import * as audioRoutes from "./downloader/routes/audioRoutes";
 
 const app = express();
 const port = 3003;
