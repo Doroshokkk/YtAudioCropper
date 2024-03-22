@@ -28,7 +28,9 @@ router.get("/crop-audio", async (req, res) => {
         const info = await youtubeUtils.getVideoInfo(videoUrl);
         const songName = sanitizeFileName(info.videoDetails.title);
         const channelName = sanitizeFileName(info.videoDetails.author.name);
+
         console.log("channelName", channelName);
+
         res.setHeader("x-song-name", songName);
         res.setHeader("x-channel-name", channelName);
         res.setHeader("x-audio-duration", duration);
@@ -39,7 +41,7 @@ router.get("/crop-audio", async (req, res) => {
             await deleteFile(filePath);
         });
     } catch (error) {
-        console.error("Error:", error.message);
+        console.error("Error in crop-audio:", error.message);
         res.status(500).json({ error: "Internal server error" });
         await deleteFile(filePathToDelete);
     }
