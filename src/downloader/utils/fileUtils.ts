@@ -9,6 +9,22 @@ export async function deleteFile(filePath: string) {
     }
 }
 
+export async function calculateDuration(startSecond, endSecond, videoLength) {
+    let duration;
+
+    if (endSecond) {
+        if (endSecond <= videoLength) {
+            duration = endSecond - startSecond;
+        } else {
+            duration = videoLength - startSecond;
+        }
+    } else {
+        duration = videoLength - startSecond;
+    }
+
+    return duration;
+}
+
 export function sanitizeFileName(input: string): string {
     return input.replace(/[^\x20-\x7E]/g, ""); // Remove non-printable ASCII characters
 }

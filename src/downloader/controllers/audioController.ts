@@ -1,6 +1,7 @@
 import * as ytdl from "ytdl-core";
 import * as youtubeUtils from "../utils/youtubeUtils";
 import { executeFfmpeg } from "../utils/ffmpegUtils";
+import { calculateDuration } from "../utils/fileUtils";
 
 export type AudioCropResponse = { filePath: string; duration: number };
 
@@ -12,17 +13,7 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
         const outputFilePath = `${__dirname}/../${videoTitle}_cropped.mp3`;
         const videoStream = ytdl(videoUrl, { quality: "highestaudio" });
         const start = startSecond ? startSecond : 0;
-
-        let duration;
-        if (endSecond) {
-            if (endSecond <= videoLength) {
-                duration = endSecond - startSecond;
-            } else {
-                duration = videoLength - startSecond;
-            }
-        } else {
-            duration = videoLength - startSecond;
-        }
+        const duration = await calculateDuration(startSecond, endSecond, videoLength);
 
         await executeFfmpeg(videoStream, outputFilePath, start, duration);
         return { filePath: outputFilePath, duration };
