@@ -18,7 +18,7 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
         await executeFfmpeg(videoStream, outputFilePath, start, duration);
         return { filePath: outputFilePath, duration };
     } catch (error) {
-        console.error("Error:", error.message);
+        console.error("Error in downloadAncCrop:", error.message);
         throw error;
     }
 }

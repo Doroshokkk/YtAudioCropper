@@ -7,5 +7,5 @@ const port = 3003;
 app.use("/audio", audioRoutes);
 
 app.listen(port, () => {
-    console.log(`Server is runninon port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });
