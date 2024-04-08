@@ -34,6 +34,7 @@ router.get("/crop-audio", async (req, res) => {
         res.setHeader("x-song-name", songName);
         res.setHeader("x-channel-name", channelName);
         res.setHeader("x-audio-duration", duration);
+        res.setHeader("x-video-thumbnail", info.videoDetails?.thumbnail?.thumbnails?.[0]?.url);
         res.download(filePath, async (err) => {
             if (err) {
                 console.error("Error sending file:", err);
