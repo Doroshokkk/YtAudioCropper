@@ -26,5 +26,5 @@ export async function calculateDuration(startSecond, endSecond, videoLength) {
 }
 
 export function sanitizeFileName(input: string): string {
-    return input.replace(/[^\x20-\x7E]/g, ""); // Remove non-printable ASCII characters
+    return input.replace(/[^\x20-\x7E]/g, "").replace(/"/g, ""); // Remove non-printable ASCII characters and ""
 }
