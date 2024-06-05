@@ -4,7 +4,8 @@ export function executeFfmpeg(videoStream: any, outputFilePath: string, startSec
     return new Promise((resolve, reject) => {
         ffmpeg(videoStream)
             .audioCodec("libmp3lame")
-            .audioBitrate(320)
+            .audioBitrate(192) // Reduced bitrate for smaller file size but good quality
+            .audioFrequency(44100) // Ensuring a standard sample rate
             .on("start", (command) => {
                 console.log("FFmpeg process started :", command);
             })
