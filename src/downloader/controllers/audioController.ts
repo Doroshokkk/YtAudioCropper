@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import * as ytdl from "ytdl-core";
+import * as ytdl from "@distube/ytdl-core";
 import * as youtubeUtils from "../utils/youtubeUtils";
 import { executeFfmpeg } from "../utils/ffmpegUtils";
 import { calculateDuration, sanitizeFileNameForDownload } from "../utils/fileUtils";
@@ -12,7 +12,6 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
         const videoTitle = info.videoDetails.title;
         const videoLength = Number(info.videoDetails.lengthSeconds);
         const outputFilePath = `${__dirname}/../${sanitizeFileNameForDownload(videoTitle)}_cropped.mp3`;
-        const videoStream = ytdl(videoUrl, { quality: "highestaudio" });
         const start = startSecond ? startSecond : 0;
         const duration = await calculateDuration(startSecond, endSecond, videoLength);
 
@@ -22,23 +21,37 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
             const writeStream = fs.createWriteStream(outputFilePath);
             videoStream.pipe(writeStream);
 
-            await new Promise((resolve, reject) => {
-                writeStream.on("finish", resolve);
-                writeStream.on("error", reject);
+            videoStream.on("error", (error) => {
+                console.error("Video stream error:", error);
             });
+
+            const timeout = new Promise(
+                (_, reject) => setTimeout(() => reject(new Error("Download timeout")), 30000), // 30s timeout
+            );
+
+            await Promise.race([
+                new Promise((resolve, reject) => {
+                    writeStream.on("finish", resolve);
+                    writeStream.on("error", reject);
+                }),
+                timeout,
+            ]);
 
             return { filePath: outputFilePath, duration: videoLength };
         } else {
             // Cropping needed, use FFmpeg
             const videoStream = ytdl(videoUrl, { quality: "highestaudio" });
-            await executeFfmpeg(videoStream, outputFilePath, start, duration);
+
+            const timeout = new Promise(
+                (_, reject) => setTimeout(() => reject(new Error("Download timeout")), 30000), // 30s timeout
+            );
+
+            await Promise.race([executeFfmpeg(videoStream, outputFilePath, start, duration), timeout]);
+
             return { filePath: outputFilePath, duration };
         }
-
-        // await executeFfmpeg(videoStream, outputFilePath, start, duration);
-        // return { filePath: outputFilePath, duration };
     } catch (error) {
-        console.error("Error in downloadAncCrop:", error.message);
+        console.error("Error in downloadAndCrop:", error.message);
         throw error;
     }
 }
