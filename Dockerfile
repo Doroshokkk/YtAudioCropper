@@ -1,5 +1,5 @@
 # Use the official Node.js base image
-FROM node:16
+FROM node:18
 
 # Install nodemon globally
 RUN npm install -g nodemon
