@@ -32,3 +32,22 @@ export function sanitizeFileName(input: string): string {
 export function sanitizeFileNameForDownload(input: string): string {
     return input.replace(/[^\x20-\x7E]/g, "").replace(/["\\/]/g, ""); // Remove non-printable ASCII characters, quotes, and slashes
 }
+
+export function cleanSongName(songName: string, channelName: string): string {
+    // Normalize the channel name
+    const normalizedChannelName = channelName
+        .replace(/VEVO$/i, '')  // Remove 'VEVO' if it appears at the end
+        .replace(/([a-z])([A-Z])/g, '$1 $2')  // Add space between camelCase words
+        .replace(/\s+/g, ' ')  // Normalize spaces
+        .trim();
+
+    // Create a dynamic regular expression to match the normalized channel name at the beginning of the song name
+    const channelRegex = new RegExp(`^${normalizedChannelName} - `, 'i');
+
+    // Remove the normalized channel name from the song name if it matches
+    return songName.replace(channelRegex, '').trim();
+}
+
+
+
+

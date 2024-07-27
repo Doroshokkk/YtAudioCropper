@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as audioController from "../controllers/audioController";
 import * as youtubeUtils from "../utils/youtubeUtils";
-import { deleteFile, sanitizeFileName } from "../utils/fileUtils";
+import { cleanSongName, deleteFile, sanitizeFileName } from "../utils/fileUtils";
 
 const router = express.Router();
 
@@ -28,10 +28,11 @@ router.get("/crop-audio", async (req, res) => {
         const info = await youtubeUtils.getVideoInfo(videoUrl);
         const songName = sanitizeFileName(info.videoDetails.title);
         const channelName = sanitizeFileName(info.videoDetails.author.name);
-
+        const cleanedSongName = cleanSongName(songName, channelName);
+        console.log("clean song name: ", cleanedSongName);
         console.log("channelName", channelName);
 
-        res.setHeader("x-song-name", songName);
+        res.setHeader("x-song-name", cleanedSongName);
         res.setHeader("x-channel-name", channelName);
         res.setHeader("x-audio-duration", duration);
         res.setHeader("x-video-thumbnail", info.videoDetails?.thumbnail?.thumbnails?.[0]?.url);
