@@ -26,7 +26,7 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
             });
 
             const timeout = new Promise(
-                (_, reject) => setTimeout(() => reject(new Error("Download timeout")), 30000), // 30s timeout
+                (_, reject) => setTimeout(() => reject(new Error("Download timeout")), 10000), // 10s timeout
             );
 
             await Promise.race([
