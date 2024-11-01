@@ -27,6 +27,7 @@ async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endS
             //     (_, reject) => setTimeout(() => reject(new Error("Download timeout")), 30000), // 30s timeout
             // );
             // await Promise.race([executeFfmpeg(videoStream, outputFilePath, start, duration), timeout]);
+
             const croppedAudioStream = executeFfmpeg(audioStream, start, duration);
             return { audioStream: croppedAudioStream, duration };
         }

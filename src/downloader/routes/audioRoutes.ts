@@ -2,7 +2,6 @@ import * as express from "express";
 import * as audioController from "../controllers/audioController";
 import * as youtubeUtils from "../utils/youtubeUtils";
 import { cleanSongName, sanitizeFileName } from "../utils/fileUtils";
-import { PassThrough } from "stream";
 
 const router = express.Router();
 
@@ -18,12 +17,6 @@ router.get("/crop-audio", async (req, res) => {
     }
 
     try {
-        const { audioStream, duration } = await audioController.downloadAndCropAudio(
-            videoUrl,
-            parseInt(startSecond) || null,
-            parseInt(endSecond) || null,
-        );
-
         const info = await youtubeUtils.getVideoInfo(videoUrl);
         const songName = sanitizeFileName(info.videoDetails.title);
         const channelName = sanitizeFileName(info.videoDetails.author.name);
@@ -32,9 +25,16 @@ router.get("/crop-audio", async (req, res) => {
         // Set headers before sending the stream
         res.setHeader("x-song-name", cleanedSongName);
         res.setHeader("x-channel-name", channelName);
-        res.setHeader("x-audio-duration", duration.toString());
         res.setHeader("x-video-thumbnail", info.videoDetails?.thumbnail?.thumbnails?.[0]?.url);
         res.setHeader("Content-Type", "audio/mpeg");
+
+        const { audioStream, duration } = await audioController.downloadAndCropAudio(
+            videoUrl,
+            parseInt(startSecond) || null,
+            parseInt(endSecond) || null,
+        );
+
+        res.setHeader("x-audio-duration", duration.toString());
 
         audioStream.pipe(res);
 
