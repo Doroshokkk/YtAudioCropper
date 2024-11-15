@@ -2,6 +2,7 @@ import * as express from "express";
 import * as audioController from "../controllers/audioController";
 import * as youtubeUtils from "../utils/youtubeUtils";
 import { cleanSongName, sanitizeFileName } from "../utils/fileUtils";
+require("dotenv").config();
 
 const router = express.Router();
 

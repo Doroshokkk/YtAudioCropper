@@ -17,24 +17,18 @@ export function executeFfmpeg(audioStream: any, startSecond: number, duration: n
         .format("mp3") // Explicitly set output format to mp3
         .setStartTime(startSecond)
         .setDuration(duration)
-        // .outputOption("-metadata", `title=${metadata.title}`)
-        // .outputOption("-metadata", `artist=${metadata.performer}`)
-        // .outputOption("-metadata", `album_artist=${metadata.performer}`)
-        // .input(metadata.thumbnailPath) // Add thumbnail as an input
+        // .input(metadata.thumbnailPath) // Adds the thumbnail image file as a second input
         // .outputOptions([
-        //     "-id3v2_version",
-        //     "3", // Use ID3v2.3 for compatibility
-        //     "-map",
-        //     "0:a", // Map the audio stream from the input
-        //     "-map",
-        //     "1:v", // Map the thumbnail image as album art
-        //     "-c:v",
-        //     "mjpeg", // Set codec for the image (JPEG is recommended)
-        //     "-metadata:s:v",
-        //     'title="Album cover"', // Set the title for the cover
-        //     "-metadata:s:v",
-        //     'comment="Cover (front)"', // Set the comment to specify the image type
+        //     '-id3v2_version', '3', // Set ID3 tag version
+        //     // '-map', '0:a', // Use the audio stream from the first input (index 0)
+        //     // '-map', '1:v', // Use the video (image) stream from the second input (index 1)
+        //     // '-c:v', 'mjpeg', // Set the codec for the image (MJPEG is recommended for album art) //this stuff doesn't work, but lower 3 work
+        //     // '-metadata:s:v', 'title="Album cover"', // Set the title for the album art
+        //     // '-metadata:s:v', 'comment="Cover (front)"', // Set the type of cover art
         // ])
+        // .outputOption('-metadata', `title=${metadata.title}`)
+        // .outputOption('-metadata', `artist=${metadata.performer}`)
+        // .outputOption('-metadata', `album_artist=${metadata.performer}`)
         .on("start", (command) => {
             console.log("FFmpeg process started:", command);
         })
