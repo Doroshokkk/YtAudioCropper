@@ -26,8 +26,8 @@ export async function downloadAndCropAudio(videoUrl: string, startSecond?: numbe
             // No cropping needed, download directly
             const audioStream = ytdl(videoUrl, { quality: "highestaudio", filter: "audioonly" });
 
-            const audioStreamWithMeta = executeFfmpeg(audioStream, start, duration);
-            return { audioStream: audioStreamWithMeta, duration: videoLength };
+            // const audioStreamWithMeta = executeFfmpeg(audioStream, start, duration);
+            return { audioStream: audioStream, duration: videoLength };
         } else {
             // Cropping needed, use FFmpeg
             const audioStream = ytdl(videoUrl, { quality: "highestaudio", filter: "audioonly" });
