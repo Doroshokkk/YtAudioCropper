@@ -1,7 +1,7 @@
 import * as amqp from "amqplib";
 import * as audioController from "../controllers/audioController";
 import * as youtubeUtils from "../utils/youtubeUtils";
-import { cleanSongName, sanitizeFileName } from "../utils/fileUtils";
+import { calculateDuration, cleanSongName, sanitizeFileName } from "../utils/fileUtils";
 import { PassThrough } from "stream";
 import axios from "axios";
 import { Telegraf } from "telegraf";
@@ -15,6 +15,8 @@ const URI = `/webhook/audio-processed`;
 const RESPONSE_WEBHOOK_URL = SERVER_URL + URI;
 
 export async function startConsumer() {
+    const bot = new Telegraf(TOKEN);
+
     try {
         console.log("starting to consume");
         const connection = await amqp.connect(RABBITMQ_URL);
@@ -33,9 +35,26 @@ export async function startConsumer() {
 
                     try {
                         console.log("RESPONSE_WEBHOOK_URL", RESPONSE_WEBHOOK_URL);
+                        const info = await youtubeUtils.getVideoInfo(videoUrl);
+                        const videoLength = Number(info.videoDetails.lengthSeconds);
+
+                        const audioDuration = await calculateDuration(parseInt(startSecond) || 0, parseInt(endSecond) || null, videoLength);
+                        console.log("audioDuration", audioDuration);
+                        if (audioDuration > 600) {
+                            console.log("before send message");
+                            await bot.telegram.sendMessage(
+                                chatId,
+                                `Sorry, couldn't download audio for ${info.videoDetails.title}. It's longer than 10 minutes, I am still young and don't have enough processing power for such requests =(`,
+                            );
+                            console.log("after send message");
+                            channel.ack(message);
+                            return;
+                        }
+
+                        console.log("after audioduration check");
                         // throw new Error("testing");
-                        await processMessage(chatId, videoUrl, startSecond, endSecond);
                         channel.ack(message);
+                        await processMessage(chatId, videoUrl, info, startSecond, endSecond); //should only wait until we send the message, other isn't important. Can ack in this case
                     } catch (error) {
                         console.error("Failed to process message:", error);
                         channel.nack(message);
@@ -51,23 +70,24 @@ export async function startConsumer() {
     }
 }
 
-async function processMessage(chatId: number, videoUrl: string, startSecond?: string, endSecond?: string) {
+async function processMessage(chatId: number, videoUrl: string, info, startSecond?: string, endSecond?: string) {
     try {
-        const info = await youtubeUtils.getVideoInfo(videoUrl);
+        const bot = new Telegraf(TOKEN);
+
         const songName = sanitizeFileName(info.videoDetails.title);
         const channelName = sanitizeFileName(info.videoDetails.author.name);
         const cleanedSongName = cleanSongName(songName, channelName);
 
-        console.log("before crop");
-        const { audioStream, duration } = await audioController.downloadAndCropAudio(
+        console.log("before downloadAndCropAudio");
+
+        const { audioStream, duration, cropped } = await audioController.downloadAndCropAudio(
             videoUrl,
             parseInt(startSecond) || null,
             parseInt(endSecond) || null,
         );
 
-        console.log("after crop");
+        console.log("after downloadAndCropAudio");
 
-        // Create a pass-through stream to pipe to S3
         const passThrough = new PassThrough();
         audioStream.pipe(passThrough);
 
@@ -76,42 +96,28 @@ async function processMessage(chatId: number, videoUrl: string, startSecond?: st
             throw new Error("Error in audio stream");
         });
 
-        const bot = new Telegraf(TOKEN);
-
-        let file_id;
-
-        // file_id = "CQACAgIAAxkDAAIM5GcpGVdpTUKJ2eggyPpyloFsj6g6AALvcgACjZVJSQJxlemHTv9ZNgQ";
-
         let response;
 
-        if (file_id) {
-            // for future logic to send full files by ID that's stored in DB
-            response = await bot.telegram.sendAudio(chatId, file_id, {
+        response = await bot.telegram.sendAudio(
+            chatId,
+            {
+                source: passThrough,
+            },
+            {
                 title: cleanedSongName,
                 duration: duration,
                 performer: channelName,
                 thumbnail: { url: info.videoDetails?.thumbnail?.thumbnails?.[0]?.url },
                 caption: "@ytAudioCropBot",
-            });
-        } else {
-            response = await bot.telegram.sendAudio(
-                chatId,
-                {
-                    source: passThrough,
-                },
-                {
-                    title: cleanedSongName,
-                    duration: duration,
-                    performer: channelName,
-                    thumbnail: { url: info.videoDetails?.thumbnail?.thumbnails?.[0]?.url },
-                    caption: "@ytAudioCropBot",
-                },
-            );
-        }
+            },
+        );
+        // }
 
-        await sendToWebhook(chatId, videoUrl);
+        await sendToWebhook(chatId, videoUrl, cleanedSongName, duration, cropped, channelName, response?.audio?.file_id).catch((error) => {
+            console.log("failed to send to webhook", error.message);
+        });
 
-        console.log("response", response.audio);
+        console.log("response", response?.audio?.title);
 
         return response;
 
@@ -138,11 +144,24 @@ async function processMessage(chatId: number, videoUrl: string, startSecond?: st
     }
 }
 
-async function sendToWebhook(chatId: number, videoUrl: string) {
+async function sendToWebhook(
+    chatId: number,
+    youtube_url: string,
+    audio_name: string,
+    duration: number,
+    isCropped: boolean,
+    channel_name?: string,
+    file_id?: string,
+) {
     try {
         const response = await axios.post(RESPONSE_WEBHOOK_URL, {
             chatId,
-            videoUrl,
+            youtube_url,
+            audio_name,
+            duration,
+            isCropped,
+            channel_name,
+            file_id,
         });
 
         console.log("Successfully sent data to webhook:", response.status);
