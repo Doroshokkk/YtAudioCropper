@@ -57,7 +57,12 @@ export async function startConsumer() {
                         await processMessage(chatId, videoUrl, info, startSecond, endSecond); //should only wait until we send the message, other isn't important. Can ack in this case
                     } catch (error) {
                         console.error("Failed to process message:", error);
-                        channel.nack(message);
+                        // channel.nack(message);
+                        await bot.telegram.sendMessage(
+                            chatId,
+                            `Sorry, couldn't download audio for your last request. There is some error on my server =( \n I guess check if it's a real song link?`,
+                        );
+                        channel.ack(message);
                     }
                 }
             },
@@ -120,24 +125,6 @@ async function processMessage(chatId: number, videoUrl: string, info, startSecon
         console.log("response", response?.audio?.title);
 
         return response;
-
-        // const params = {
-        //     Bucket: "yt.crop.test",
-        //     Key: `${cleanedSongName}.mp3`,
-        //     Body: passThrough,
-        //     ContentType: "audio/mpeg",
-        //     ACL: "public-read",
-        // };
-
-        // s3.upload(params, async (err, data) => {
-        //     if (err) {
-        //         console.error("Error uploading to S3:", err);
-        //         throw new Error("Failed to upload to S3");
-        //     }
-
-        //     console.log("Successfully uploaded to S3:", data.Location);
-        //     await sendToWebhook(chatId, info.videoDetails?.thumbnail?.thumbnails?.[0]?.url, cleanedSongName, channelName, duration, data.Location);
-        // });
     } catch (error) {
         console.error("Error processing message:", error.message);
         throw error;
