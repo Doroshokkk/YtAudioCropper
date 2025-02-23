@@ -141,6 +141,7 @@ async function sendToWebhook(
     file_id?: string,
 ) {
     try {
+        console.log("Attempting to send to webhook URL:", RESPONSE_WEBHOOK_URL);
         const response = await axios.post(RESPONSE_WEBHOOK_URL, {
             chatId,
             youtube_url,

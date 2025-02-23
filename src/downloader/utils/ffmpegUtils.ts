@@ -34,7 +34,7 @@ export function executeFfmpeg(audioStream: any, startSecond: number, duration: n
         })
         .on("error", (error) => {
             console.error("Error during FFMPEG processing:", error.message);
-            outputStream.emit("error", error);
+            outputStream.destroy(error); // Destroy the stream to propagate the error
         })
         .on("end", () => {
             console.log("Audio processing finished.");
