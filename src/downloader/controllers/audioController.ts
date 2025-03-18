@@ -10,7 +10,13 @@ export async function downloadAndCropAudio(videoUrl: string, startSecond?: numbe
         const info = await youtubeUtils.getVideoInfo(videoUrl);
         const videoLength = Number(info.videoDetails.lengthSeconds);
         const start = startSecond ? startSecond : 0;
+
+        console.log("start", start);
+        console.log("videoLength", videoLength);
+        if (start >= videoLength) throw new Error("Start time is greater than video length");
+
         const duration = await calculateDuration(startSecond, endSecond, videoLength);
+
 
         const fullLength = start === 0 && (!endSecond || endSecond >= videoLength);
 
