@@ -53,8 +53,8 @@ export async function startConsumer() {
 
                         console.log("after audioduration check");
                         // throw new Error("testing");
-                        channel.ack(message);
                         await processMessage(chatId, videoUrl, info, startSecond, endSecond); //should only wait until we send the message, other isn't important. Can ack in this case
+                        channel.ack(message);
                     } catch (error) {
                         console.error("Failed to process message:", error);
                         // channel.nack(message);
@@ -94,12 +94,19 @@ async function processMessage(chatId: number, videoUrl: string, info, startSecon
         console.log("after downloadAndCropAudio");
 
         const passThrough = new PassThrough();
-        audioStream.pipe(passThrough);
 
         audioStream.on("error", (err) => {
             console.error("Error in audio stream:", err);
-            throw new Error("Error in audio stream");
+            passThrough.destroy(err);
         });
+
+        passThrough.on("error", (err) => {
+            // This error can be caught by the outer try-catch
+            console.error("PassThrough stream error:", err);
+            // throw err;
+        });
+
+        audioStream.pipe(passThrough);
 
         let response;
 
