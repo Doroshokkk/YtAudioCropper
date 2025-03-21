@@ -11,7 +11,10 @@ export type AudioCropResponse = { audioStream: any; duration: number; cropped: b
 
 export async function downloadAndCropAudio(videoUrl: string, startSecond?: number, endSecond?: number): Promise<AudioCropResponse> {
     try {
+        console.time('call getInfo');
         const info = await youtubeUtils.getVideoInfo(videoUrl);
+        console.timeEnd('call getInfo');
+
         const videoLength = Number(info.videoDetails.lengthSeconds);
         const start = startSecond ? startSecond : 0;
 
