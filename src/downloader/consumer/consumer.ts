@@ -40,7 +40,7 @@ export async function startConsumer() {
 
                         const audioDuration = await calculateDuration(parseInt(startSecond) || 0, parseInt(endSecond) || null, videoLength);
                         console.log("audioDuration", audioDuration);
-                        if (audioDuration > 600) {
+                        if (audioDuration > 600 || audioDuration < 0) {
                             console.log("before send message");
                             await bot.telegram.sendMessage(
                                 chatId,
@@ -56,13 +56,24 @@ export async function startConsumer() {
                         await processMessage(chatId, videoUrl, info, startSecond, endSecond); //should only wait until we send the message, other isn't important. Can ack in this case
                         channel.ack(message);
                     } catch (error) {
-                        console.error("Failed to process message:", error);
-                        // channel.nack(message);
-                        await bot.telegram.sendMessage(
-                            chatId,
-                            `Sorry, couldn't download audio for your last request. There is some error on my server =( \n I guess check if it's a real song link?`,
-                        );
-                        channel.ack(message);
+                        const MAX_RETRIES = 3;
+                        const headers = message.properties.headers || {};
+                        const retryCount = headers['x-retry'] || 0;
+
+                        if (retryCount < MAX_RETRIES) {
+                            console.log(`Retrying message, attempt ${retryCount + 1}`);
+                            channel.nack(message, false, false);
+                            channel.sendToQueue(QUEUE_NAME, message.content, {
+                                headers: { 'x-retry': retryCount + 1 },
+                            });
+                        } else {
+                            console.error("Failed to process message after 3 attempts:", error);
+                            await bot.telegram.sendMessage(
+                                chatId,
+                                `Sorry, couldn't download audio for your last request after multiple attempts. There is some error on my server =( \n I guess check if it's a real song link?`,
+                            );
+                            channel.ack(message);
+                        }
                     }
                 }
             },
