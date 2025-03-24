@@ -26,6 +26,8 @@ export async function startConsumer() {
             durable: true,
         });
 
+        channel.prefetch(2);
+
         channel.consume(
             QUEUE_NAME,
             async (message) => {
@@ -44,7 +46,7 @@ export async function startConsumer() {
                             console.log("before send message");
                             await bot.telegram.sendMessage(
                                 chatId,
-                                `Sorry, couldn't download audio for ${info.videoDetails.title}. It's longer than 10 minutes, I am still young and don't have enough processing power for such requests =(`,
+                                `Sorry, couldn't download audio for ${info.videoDetails.title}. It's longer than 10 minutes or negative, I am still young and don't have enough processing power for such requests =(`,
                             );
                             console.log("after send message");
                             channel.ack(message);
@@ -77,7 +79,7 @@ export async function startConsumer() {
 
 async function processMessage(chatId: number, videoUrl: string, info, startSecond?: string, endSecond?: string) {
     try {
-        const bot = new Telegraf(TOKEN);
+        const bot = new Telegraf(TOKEN, { handlerTimeout: 300000 });
 
         const songName = sanitizeFileName(info.videoDetails.title);
         const channelName = sanitizeFileName(info.videoDetails.author.name);
