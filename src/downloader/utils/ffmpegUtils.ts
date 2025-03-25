@@ -28,20 +28,21 @@ export function executeFfmpeg(audioStream: any, startSecond: number, duration: n
         //     `volume=0.2:enable='between(t,70,84)'`,
         //     `volume=1.2:enable='between(t,159,180)'`
         // ].join(','))
-        .audioFilters([
-            // Initial fade in and out
-            `afade=t=in:st=0:d=2`,
-            `afade=t=out:st=${duration - 2}:d=2`,
+        // .audioFilters([
+        //     // Initial fade in and out
+        //     `afade=t=in:st=0:d=2`,
+        //     `afade=t=out:st=${duration - 2}:d=2`,
 
-            // Smooth volume fade to 0.2 from t=19 to 30
-            `volume='if(lt(t,19),1, if(lt(t,30), 1-(t-19)*(0.8/11), 0.2))'`,
+        //     // Smooth volume fade to 0.2 from t=19 to 30
+        //     `volume='if(lt(t,19),1, if(lt(t,30), 1-(t-19)*(0.8/11), 0.2))'`,
 
-            // Smooth fade to 0.2 from t=70 to 84
-            `volume='if(lt(t,70),1, if(lt(t,84), 1-(t-70)*(0.8/14), 0.2))'`,
+        //     // Smooth fade to 0.2 from t=70 to 84
+        //     `volume='if(lt(t,70),1, if(lt(t,84), 1-(t-70)*(0.8/14), 0.2))'`,
 
-            // Smooth fade to 1.2 from t=159 to 180
-            `volume='if(lt(t,159),1, if(lt(t,180), 1+(t-159)*(0.2/21), 1.2))'`
-        ])
+        //     // Smooth fade to 1.2 from t=159 to 180
+        //     `volume='if(lt(t,159),1, if(lt(t,180), 1+(t-159)*(0.2/21), 1.2))'`
+        // ])
+        .audioFilter("asetpts=PTS-STARTPTS,volume='if(between(t,30,32), 1 - (0.9*(t-30)/2), if(between(t,32,38), 0.1, if(between(t,38,40), 0.1+(0.9*(t-38)/2), 1)))':eval=frame")
         .on("start", (command) => {
             console.log("FFmpeg process started:", command);
         })
