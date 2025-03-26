@@ -17,17 +17,6 @@ export function executeFfmpeg(audioStream: any, startSecond: number, duration: n
         .format("mp3")
         .setStartTime(startSecond)
         .setDuration(duration)
-        // Complex filter chain using amix for volume changes
-        // .audioFilters([
-        //     // First apply the overall start/end fades
-        //     `afade=t=in:st=0:d=2,afade=t=out:st=${duration - 2}:d=2`,
-        //     // Then apply volume changes using amix
-        //     `amix=inputs=1:duration=first:dropout_transition=0:weights=1`,
-        //     // Apply volume changes for each section
-        //     `volume=0.2:enable='between(t,19,30)'`,
-        //     `volume=0.2:enable='between(t,70,84)'`,
-        //     `volume=1.2:enable='between(t,159,180)'`
-        // ].join(','))
         // .audioFilters([
         //     // Initial fade in and out
         //     `afade=t=in:st=0:d=2`,
