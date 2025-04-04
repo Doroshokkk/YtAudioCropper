@@ -32,7 +32,7 @@ export async function startConsumer() {
             QUEUE_NAME,
             async (message) => {
                 if (message) {
-                    const { chatId, videoUrl, startSecond, endSecond } = JSON.parse(message.content.toString());
+                    const { chatId, videoUrl, startSecond, endSecond, volumeAdjustments, action } = JSON.parse(message.content.toString());
                     console.log(`Received message with chatId: ${chatId} and videoUrl: ${videoUrl}`);
 
                     try {
@@ -54,12 +54,10 @@ export async function startConsumer() {
                         }
 
                         console.log("after audioduration check");
-                        // throw new Error("testing");
-                        await processMessage(chatId, videoUrl, info, startSecond, endSecond); //should only wait until we send the message, other isn't important. Can ack in this case
+                        await processMessage(chatId, videoUrl, info, startSecond, endSecond, volumeAdjustments, action);
                         channel.ack(message);
                     } catch (error) {
                         console.error("Failed to process message:", error);
-                        // channel.nack(message);
                         await bot.telegram.sendMessage(
                             chatId,
                             `Sorry, couldn't download audio for your last request. There is some error on my server =( \n I guess check if it's a real song link?`,
@@ -77,7 +75,7 @@ export async function startConsumer() {
     }
 }
 
-async function processMessage(chatId: number, videoUrl: string, info, startSecond?: string, endSecond?: string) {
+async function processMessage(chatId: number, videoUrl: string, info, startSecond?: string, endSecond?: string, volumeAdjustments?: string, action?: string) {
     try {
         const bot = new Telegraf(TOKEN, { handlerTimeout: 300000 });
 
@@ -91,6 +89,8 @@ async function processMessage(chatId: number, videoUrl: string, info, startSecon
             videoUrl,
             parseInt(startSecond) || null,
             parseInt(endSecond) || null,
+            volumeAdjustments,
+            action
         );
 
         console.log("after downloadAndCropAudio");

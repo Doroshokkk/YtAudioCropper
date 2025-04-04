@@ -7,31 +7,60 @@ export type tgAudioMetadata = {
     thumbnailPath: string; // Path of the thumbnail image to be embedded as album art
 };
 
-export function executeFfmpeg(audioStream: any, startSecond: number, duration: number): PassThrough {
+function generateVolumeFilter(volumeAdjustments?: string, startSecond?: number): string {
+    if (!volumeAdjustments) return '1';
+
+    const segments = volumeAdjustments.split(',').map(s => s.trim());
+    let filterExpression = '1';
+
+    for (let i = segments.length - 1; i >= 0; i--) {
+        const segment = segments[i];
+        const [timeRange, volume] = segment.split('=').map(s => s.trim());
+        const [absoluteStart, absoluteEnd] = timeRange.split('-').map(Number);
+
+        const start = Math.max(0, absoluteStart - startSecond);
+        const end = absoluteEnd - startSecond;
+
+        if (end <= 0) continue;
+
+        const volumeDecimal = parseInt(volume) / 100;
+        const transitionDuration = 2;
+
+        // Fixed fade-out calculation by using correct reference time (end - transitionDuration)
+        const condition = `if(between(t,${start},${start + transitionDuration}), 1 - (${1 - volumeDecimal}*(t-${start})/${transitionDuration}), ` +
+            `if(between(t,${start + transitionDuration},${end - transitionDuration}), ${volumeDecimal}, ` +
+            `if(between(t,${end - transitionDuration},${end}), ${volumeDecimal} + (${1 - volumeDecimal}*(t-(${end - transitionDuration}))/${transitionDuration}), ${filterExpression})))`;
+
+        filterExpression = condition;
+    }
+
+    return filterExpression;
+}
+
+export function executeFfmpeg(audioStream: any, startSecond: number, duration: number, volumeAdjustments?: string): PassThrough {
     const outputStream = new PassThrough();
+
+    // volumeAdjustments = "36-48=40%, 90-102=40%, 127-156=120%, 178-200=120%"
 
     const command = ffmpeg(audioStream)
         .audioCodec("libmp3lame")
         .audioBitrate(192)
         .audioFrequency(44100)
+        .outputOptions([
+            "-write_xing", "1",       // Add XING header for better compatibility
+            "-id3v2_version", "3",    // Add ID3v2 tags
+            "-metadata", "encoded_by=YtAudioCropper"  // Add metadata
+        ])
         .format("mp3")
         .setStartTime(startSecond)
         .setDuration(duration)
-        // .audioFilters([
-        //     // Initial fade in and out
-        //     `afade=t=in:st=0:d=2`,
-        //     `afade=t=out:st=${duration - 2}:d=2`,
+        .audioFilters([
+            // Initial fade in and out
+            `afade=t=in:st=0:d=2`,
+            `afade=t=out:st=${duration - 2}:d=2`,
 
-        //     // Smooth volume fade to 0.2 from t=19 to 30
-        //     `volume='if(lt(t,19),1, if(lt(t,30), 1-(t-19)*(0.8/11), 0.2))'`,
-
-        //     // Smooth fade to 0.2 from t=70 to 84
-        //     `volume='if(lt(t,70),1, if(lt(t,84), 1-(t-70)*(0.8/14), 0.2))'`,
-
-        //     // Smooth fade to 1.2 from t=159 to 180
-        //     `volume='if(lt(t,159),1, if(lt(t,180), 1+(t-159)*(0.2/21), 1.2))'`
-        // ])
-        .audioFilter("asetpts=PTS-STARTPTS,volume='if(between(t,30,32), 1 - (0.9*(t-30)/2), if(between(t,32,38), 0.1, if(between(t,38,40), 0.1+(0.9*(t-38)/2), 1)))':eval=frame")
+            `volume='${generateVolumeFilter(volumeAdjustments, startSecond)}':eval=frame`
+        ])
         .on("start", (command) => {
             console.log("FFmpeg process started:", command);
         })
