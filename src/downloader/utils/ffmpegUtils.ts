@@ -46,11 +46,6 @@ export function executeFfmpeg(audioStream: any, startSecond: number, duration: n
         .audioCodec("libmp3lame")
         .audioBitrate(192)
         .audioFrequency(44100)
-        .outputOptions([
-            "-write_xing", "1",       // Add XING header for better compatibility
-            "-id3v2_version", "3",    // Add ID3v2 tags
-            "-metadata", "encoded_by=YtAudioCropper"  // Add metadata
-        ])
         .format("mp3")
         .setStartTime(startSecond)
         .setDuration(duration)
